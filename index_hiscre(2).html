@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Rubricas do HISCRE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo-icon {
+            width: 50px; height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1e3a5f;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .logo-text h1 { font-size: 24px; font-weight: 600; }
+        .logo-text span { font-size: 12px; opacity: 0.9; }
+        .main-container {
+            display: block;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .content-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .sidebar h3 {
+            color: #1e3a5f;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .upload-area {
+            border: 2px dashed #2c5282;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f7fafc;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            background: #e6fffa;
+            border-color: #38b2ac;
+        }
+        .upload-area input { display: none; }
+        .upload-icon { font-size: 40px; margin-bottom: 10px; }
+        .file-info {
+            background: #e6fffa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #2c5282; color: white; }
+        .btn-primary:hover { background: #1e3a5f; }
+        .btn-secondary { background: #e2e8f0; color: #4a5568; }
+        .btn-secondary:hover { background: #cbd5e0; }
+        .btn-success { background: #38b2ac; color: white; }
+        .btn-success:hover { background: #319795; }
+        .btn-modern { background: linear-gradient(135deg, #1a365d, #2b6cb0); color: white; }
+        .btn-modern:hover { background: linear-gradient(135deg, #0f2744, #1e4a8a); }
+        .tabs-container {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .tabs-header {
+            display: flex;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #4a5568;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: #2c5282;
+            border-bottom-color: #2c5282;
+            background: white;
+        }
+        .tab-btn:hover { background: #edf2f7; }
+        .tab-content { display: none; padding: 30px; }
+        .tab-content.active { display: block; }
+        .accordion {
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .accordion-header {
+            background: #2c5282;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .accordion-header:hover { background: #1e3a5f; }
+        .accordion-content { display: none; padding: 15px; background: white; }
+        .accordion-content.show { display: block; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .data-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #2c5282;
+        }
+        .data-table tr:hover { background: #f7fafc; }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .search-box:focus { outline: none; border-color: #2c5282; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .value-filter-box {
+            margin-top: 18px;
+            padding: 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #dbe3ec;
+            border-left: 4px solid #38b2ac;
+            border-radius: 8px;
+        }
+        .value-filter-title {
+            color: #1e3a5f;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .value-filter-box .form-group { margin-bottom: 0; }
+        .value-filter-box small { color: #718096; font-size: 12px; }
+        .info-box {
+            background: #e6fffa;
+            border-left: 4px solid #38b2ac;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .warning-box {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c5282;
+        }
+        .metric-label {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .text-center { text-align: center; }
+        .mt-20 { margin-top: 20px; }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #c6f6d5; color: #22543d; }
+        .badge-warning { background: #feebc8; color: #744210; }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .button-group .btn { width: auto; margin: 0; }
+        .total-info {
+            background: #f7fafc;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2c5282;
+            font-weight: 600;
+            color: #2c5282;
+        }
+        .export-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .export-group .btn { width: auto; margin: 0; }
+        .export-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        .filter-actions { margin-bottom: 0; }
+        .filter-actions .btn { width: auto; min-width: 160px; }
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 39, 68, 0.58);
+            display: none; align-items: center; justify-content: center;
+            padding: 20px; z-index: 9999; backdrop-filter: blur(3px);
+        }
+        .modal-overlay.show { display: flex; }
+        .beneficiario-modal {
+            width: min(680px, 100%); background: #fff; border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(15, 39, 68, 0.25); overflow: hidden;
+            animation: modalIn .18s ease-out;
+        }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 22px 24px; background: linear-gradient(135deg, #1e3a5f, #2c5282); color: #fff;
+        }
+        .modal-kicker { font-size: 11px; letter-spacing: 1.5px; opacity: .78; font-weight: 700; }
+        .modal-header h3 { margin-top: 5px; font-size: 21px; font-weight: 650; }
+        .modal-close { background: transparent; border: 0; color: #fff; font-size: 28px; line-height: 1; cursor: pointer; opacity: .8; }
+        .modal-close:hover { opacity: 1; }
+        .modal-body { padding: 22px 24px 8px; }
+        .modal-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .modal-info-card { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 9px; padding: 13px 15px; min-width: 0; }
+        .modal-info-wide { grid-column: 1 / -1; }
+        .modal-info-card span { display: block; color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+        .modal-info-card strong { display: block; color: #1e3a5f; font-size: 15px; word-break: break-word; }
+        .modal-footer { display: flex; justify-content: flex-end; padding: 14px 24px 22px; }
+        .modal-action { width: auto; min-width: 220px; margin: 0; }
+        @media (max-width: 600px) { .modal-info-grid { grid-template-columns: 1fr; } .modal-info-wide { grid-column: auto; } .modal-footer .btn { width: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div class="header" id="mainHeader">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🏛️</div>
+                <div class="logo-text">
+                    <h1>Buscador Institucional de Rubricas</h1>
+                    <span>Sistema de Análise Documental HISCRE</span>
+                </div>
+            </div>
+            <div style="font-size: 14px; opacity: 0.9;">
+                🔒 Processamento 100% Local
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container" id="mainContainer">
+        <div class="content-wrapper">
+            <div class="sidebar">
+                <h3>📁 Upload do Documento</h3>
+
+                <div class="warning-box" style="font-size: 12px; padding: 10px;">
+                    ⚠️ Os arquivos não são salvos na nuvem. Todo processamento ocorre localmente no seu computador.
+                </div>
+
+                <label class="upload-area" id="uploadArea" for="fileInput">
+                    <input type="file" id="fileInput" accept=".pdf" onchange="handleFileSelect(event)">
+                    <div class="upload-icon">📄</div>
+                    <div>Arraste um PDF aqui ou clique para selecionar</div>
+                    <div style="font-size: 12px; color: #718096; margin-top: 5px;">Apenas arquivos PDF</div>
+                </label>
+
+                <div class="file-info" id="fileInfo"></div>
+
+                <button class="btn btn-secondary" onclick="clearFile()" id="btnClear" style="display: none;">
+                    🗑️ Limpar Arquivo
+                </button>
+
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+                    <h4 style="margin-bottom: 10px; color: #2c5282;">📊 Status</h4>
+                    <div id="statusInfo" style="font-size: 14px; color: #718096;">
+                        Nenhum arquivo carregado
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" onclick="switchTab('referencia')">📋 Referência</button>
+                    <button class="tab-btn" onclick="switchTab('analise')">📊 Análise de PDF</button>
+                    <button class="tab-btn" onclick="switchTab('buscador')">🔍 Buscador no PDF</button>
+                </div>
+
+                <div class="tab-content active" id="tab-referencia">
+                    <h2 style="color: #1e3a5f; margin-bottom: 20px;">📋 Referência de Rubricas do HISCRE</h2>
+
+                    <div class="info-box">
+                        <strong>ℹ️ Consulta Rápida:</strong><br>
+                        • Use a busca abaixo para encontrar rubricas específicas<br>
+                        • Navegue pelas categorias para explorar todas as rubricas disponíveis<br>
+                        • Consulte a descrição oficial de cada código
+                    </div>
+
+                    <input type="text" class="search-box" id="searchRubrica" placeholder="🔍 Buscar rubrica por código ou descrição..." onkeyup="filterRubricas()">
+
+                    <div id="rubricasContainer">
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-analise">
+                    <h2 style="color: #1e3a5f; margin-bottom: 20px;">📊 Análise de Rubricas do Documento</h2>
+
+                    <div class="info-box">
+                        <strong>ℹ️ Como funciona:</strong><br>
+                        • Faça upload do PDF do demonstrativo HISCRE na sidebar e clique em "Ler Documento"<br>
+                        • O sistema identificará TODAS as rubricas únicas presentes no documento<br>
+                        • Você poderá baixar o relatório completo em CSV ou PDF
+                    </div>
+
+                    <div id="analiseContent" style="display: none;">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value" id="metricTotal">0</div>
+                                <div class="metric-label">Total de Rubricas Únicas</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="metricOcorrencias">0</div>
+                                <div class="metric-label">Total de Ocorrências</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="metricSemRef">0</div>
+                                <div class="metric-label">Rubricas sem Referência</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <button class="btn btn-success" onclick="exportToPDF()" style="width: auto; padding: 12px 24px;">
+                                📄 Exportar Relatório PDF
+                            </button>
+                            <button class="btn btn-primary" onclick="exportToCSV()" style="width: auto; padding: 12px 24px; margin-left: 10px;">
+                                ⬇️ Baixar CSV
+                            </button>
+                        </div>
+
+                        <table class="data-table" id="analiseTable">
+                            <thead>
+                                <tr>
+                                    <th>Rubrica</th>
+                                    <th>Descrição no Documento</th>
+                                    <th>Descrição de Referência</th>
+                                    <th>Ocorrências</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analiseTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="analiseEmpty" class="text-center" style="padding: 40px; color: #718096;">
+                        <p>Faça upload do documento HISCRE na sidebar e proceda com a leitura para começar a análise.</p>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-buscador">
+                    <h2 style="color: #1e3a5f; margin-bottom: 20px;">🔍 Buscador de Rubricas no Documento</h2>
+
+                    <div class="info-box">
+                        <strong>ℹ️ Como funciona:</strong><br>
+                        • Ao carregar o PDF, a leitura é realizada automaticamente.<br>
+                        • Informe as rubricas abaixo para filtrar os registros; o resultado é atualizado automaticamente.<br>
+                        • O sistema localiza o status de pagamento real linha a linha do PDF.
+                    </div>
+
+                    <div class="form-row" style="margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label>Número do Processo</label>
+                            <input type="text" id="numProcesso" placeholder="Ex: 0001234-55.2023.5.05.0000">
+                        </div>
+                        <div class="form-group">
+                            <label>Nome da Parte Autora (Automático)</label>
+                            <input type="text" id="nomeAutor" placeholder="Será preenchido automaticamente ao ler o PDF">
+                        </div>
+                    </div>
+
+                    <h3 style="color: #2c5282; margin: 20px 0 15px;">🔎 Filtrar Resultados (Opcional)</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Rubrica 1</label>
+                            <input type="text" class="rubrica-input" id="r1" placeholder="Ex: 101" maxlength="3" oninput="showDescription(this, 'desc1'); executarBuscaAutomatica()">
+                            <small id="desc1" style="color: #718096;"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Rubrica 2</label>
+                            <input type="text" class="rubrica-input" id="r2" placeholder="Ex: 201" maxlength="3" oninput="showDescription(this, 'desc2'); executarBuscaAutomatica()">
+                            <small id="desc2" style="color: #718096;"></small>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label>Rubrica 3</label>
+                            <input type="text" class="rubrica-input" id="r3" placeholder="Ex: 104" maxlength="3" oninput="showDescription(this, 'desc3'); executarBuscaAutomatica()">
+                            <small id="desc3" style="color: #718096;"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Rubrica 4</label>
+                            <input type="text" class="rubrica-input" id="r4" placeholder="Ex: 203" maxlength="3" oninput="showDescription(this, 'desc4'); executarBuscaAutomatica()">
+                            <small id="desc4" style="color: #718096;"></small>
+                        </div>
+                    </div>
+
+                    <div class="value-filter-box">
+                        <div class="value-filter-title">💰 Filtro por valor</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="valorMinimo">Valor mínimo (R$)</label>
+                                <input type="text" id="valorMinimo" inputmode="decimal" placeholder="Ex: 1.000,00" oninput="onValorMinimoInput(this)">
+                            </div>
+                            <div class="form-group">
+                                <label for="valorMaximo">Valor máximo (R$)</label>
+                                <input type="text" id="valorMaximo" inputmode="decimal" placeholder="Ex: 5.000,00" oninput="onValorMaximoInput(this)">
+                            </div>
+                        </div>
+                        <small>Ao informar o valor mínimo, o máximo recebe inicialmente o mesmo valor e permanece livre para alteração. O filtro é aplicado automaticamente.</small>
+                    </div>
+
+                    <div class="button-group filter-actions" style="margin-top: 18px;">
+                        <button class="btn btn-secondary" type="button" onclick="removerFiltros()">
+                            ✕ Remover filtros
+                        </button>
+                    </div>
+
+                    <div id="buscadorResult" style="display: none; margin-top: 30px;">
+                        <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                            <h4 style="color: #2c5282; margin-bottom: 15px;">🔗 Informações do Beneficiário:</h4>
+                            <p><strong>Nome (PDF):</strong> <span id="resultNome">-</span></p>
+                            <p><strong>NB(s) encontrados:</strong> <span id="resultNB">-</span></p>
+                            <p><strong>Período:</strong> <span id="resultPeriodo">-</span></p>
+                            <p><strong>Data de emissão:</strong> <span id="resultDataEmissao">-</span></p>
+                            <p><strong>Número do Processo:</strong> <span id="resultProcesso">-</span></p>
+                        </div>
+
+                        <div class="total-info" id="totalRegistrosTopo">
+                            Total de registros listados: <strong>0</strong>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-secondary" onclick="toggleStatusFilter('all')">
+                                Exibir todos
+                            </button>
+                            <button class="btn btn-success" onclick="toggleStatusFilter('Pago')">
+                                Exibir apenas pagos
+                            </button>
+                            <button class="btn" style="background: #e53e3e; color: white;" onclick="toggleStatusFilter('Não Pago')">
+                                Exibir apenas Não Pagos
+                            </button>
+                        </div>
+
+                        <!-- GRUPO DE EXPORTAÇÃO COM DUAS OPÇÕES -->
+                        <div class="export-group">
+                            <span class="export-label">📄 Exportar Relatório:</span>
+                            <button class="btn btn-success" onclick="exportBuscadorPDF()">
+                                PDF Clássico
+                            </button>
+                            <button class="btn btn-modern" onclick="exportBuscadorPDFModerno()">
+                                🏛️ PDF Moderno (Enterprise)
+                            </button>
+                            <button class="btn btn-primary" onclick="exportBuscadorCSV()">
+                                ⬇️ Baixar CSV
+                            </button>
+                        </div>
+
+                        <table class="data-table" id="buscadorTable">
+                            <thead>
+                                <tr>
+                                    <th>Página</th>
+                                    <th>Comp.</th>
+                                    <th>Rubrica</th>
+                                    <th>Descrição</th>
+                                    <th>Valor (R$)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="buscadorTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação da leitura automática -->
+    <div class="modal-overlay" id="beneficiarioModal" aria-hidden="true">
+        <div class="beneficiario-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+            <div class="modal-header">
+                <div>
+                    <span class="modal-kicker">LEITURA CONCLUÍDA</span>
+                    <h3 id="modalTitulo">Informações do Beneficiário</h3>
+                </div>
+                <button class="modal-close" type="button" onclick="fecharModalBeneficiario()" aria-label="Fechar">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info-grid">
+                    <div class="modal-info-card modal-info-wide">
+                        <span>Beneficiário</span>
+                        <strong id="modalNome">—</strong>
+                    </div>
+                    <div class="modal-info-card">
+                        <span>NB(s) encontrados</span>
+                        <strong id="modalNB">—</strong>
+                    </div>
+                    <div class="modal-info-card">
+                        <span>Período inicial</span>
+                        <strong id="modalPeriodoInicial">—</strong>
+                    </div>
+                    <div class="modal-info-card">
+                        <span>Período final</span>
+                        <strong id="modalPeriodoFinal">—</strong>
+                    </div>
+                    <div class="modal-info-card modal-info-wide">
+                        <span>Data de emissão</span>
+                        <strong id="modalDataEmissao">—</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary modal-action" type="button" onclick="fecharModalBeneficiario()">
+                    Continuar para o buscador →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const descricoesRubricas = {
+            "101": "VALOR TOTAL DE MR DO PERÍODO", "103": "Abono do Governo Federal", "104": "VALOR DO DÉCIMO-TERCEIRO SALÁRIO",
+            "105": "SALARIO FAMILIA", "106": "Parcela de diferença de revisão da RMI", "107": "Complemento positivo",
+            "110": "Correção monetária", "111": "Parcela de gratificação de ex-combatente", "115": "Abono anual de ex-combatente (14º salário)",
+            "121": "COMPLEMENTO A TITULO DE CPMF", "125": "CP – Decisão judicial", "131": "CP - REVISAO BENEFICIO SISTEMA CENTRAL",
+            "135": "Gratificação de qualidade e produtividade", "137": "ADIANTAMENTO P/ARREDONDAMENTO DO CRÉDITO", "145": "Adicional Talidomida",
+            "146": "Indenização por ação judicial específica", "156": "CP – Revisão de teto", "159": "CORRECAO MONETARIA COMPLEMENTAR DE RENDA",
+            "201": "IMPOSTO DE RENDA RETIDO NA FONTE", "202": "Pensão Alimentícia – Débito", "203": "CONSIGNAÇÃO",
+            "204": "Imposto de Renda no Exterior", "205": "Diferença de Imposto de Renda – Débito", "206": "Desconto do INSS",
+            "207": "DESCONTO DE I.R. SOBRE 13º SALÁRIO", "208": "Contribuição Previdenciária sobre 13º Salário", "209": "Diferença de IR sobre 13º Salário – Débito",
+            "210": "Pensão Alimentícia sobre 13º Salário", "211": "Desconto de IR sobre 14º Salário", "212": "Contribuição Previdenciária sobre 14º Salário",
+            "213": "Pensão Alimentícia sobre 14º Salário", "214": "CONSIGNAÇÃO SOBRE 13 SAL.", "215": "AJUSTE DO ARREDONDAMENTO DE CRÉDITOS",
+            "216": "CONSIGNAÇÃO EMPRÉSTIMO BANCÁRIO", "217": "EMPRÉSTIMO SOBRE A RMC", "218": "13. SALÁRIO PAGO COMPETÊNCIAS ANTERIORES",
+            "227": "DEVOLUCAO DE CPMF", "233": "Desconto para Verificação de Teto", "236": "Décimo Terceiro Salário – Débito",
+            "242": "CONTRIBUICAO SINDIAPI 0800 777 5767", "251": "Décimo Terceiro Salário Pago a Maior", "252": "Desconto por Acumulação de Benefício Já Concedido",
+            "253": "Desconto por Acumulação de Benefício – 13º Salário", "254": "Consignacao CONTRIBUICAO UNIBAP", "268": "CONSIGNACAO - CARTAO",
+            "288": "CONTRIB. AASAP 0800 202 0177", "302": "Abatimento IR por Dependente", "303": "Abatimento a Beneficiário Maior de 65 Anos",
+            "304": "Desconto por Dependente sobre 13º Salário", "305": "Desconto Maior 65 Anos – IR 13º Salário", "308": "Desconto por Dependente sobre 14º Salário",
+            "309": "Desconto Maior 65 Anos – IR 14º Salário", "310": "Desconto de Consignação no IR", "312": "Desconto de Consignação no IR – 13º Salário",
+            "313": "IR Não Recolhido por Ordem Judicial", "314": "IR Não Recolhido por Ordem Judicial – 13º Salário", "316": "SALDO DEVEDOR ARREDONDAMENTO DE CREDITOS",
+            "320": "IR sobre Décimo Terceiro Devolvido", "323": "ADIANTAMENTO DE 13 COMPETENCIA ANTERIOR", "365": "Indenização Talidomida – Lei 12.190/2010",
+            "373": "CP – Artigo 29 ACP-MP242", "375": "CP – Indenização seringueiros", "383": "RESERVA CARTÃO CONSIGNADO", "384": "DESCONTO SIMPLIFICADO DE IR",
+            "385": "DESCONTO SIMPLIFICADO DE IR SOBRE 13", "903": "Saldo de Imposto de Renda – Positivo", "904": "Saldo de Imposto de Renda – Negativo",
+            "916": "CONSIGNAÇÃO IR NA FONTE", "917": "Consignação IR no Exterior", "920": "Consignação empréstimo da CEF"
+        };
+
+        const categoriasRubricas = {
+            "Série 100 - Pagamentos e Receitas": [],
+            "Série 200 - Descontos e Consignações": [],
+            "Série 300 - Ajustes e Informativas": [],
+            "Série 900 - Saldos Finais": []
+        };
+        for(let code in descricoesRubricas){
+            let item = {code: code, desc: descricoesRubricas[code]};
+            if(code.startsWith("1")) categoriasRubricas["Série 100 - Pagamentos e Receitas"].push(item);
+            else if(code.startsWith("2")) categoriasRubricas["Série 200 - Descontos e Consignações"].push(item);
+            else if(code.startsWith("3")) categoriasRubricas["Série 300 - Ajustes e Informativas"].push(item);
+            else if(code.startsWith("9")) categoriasRubricas["Série 900 - Saldos Finais"].push(item);
+        }
+
+        let uploadedFile = null;
+        let objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+        let currentFilter = 'all';
+        let dadosFiltradosBuscador = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initRubricas();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') fecharModalBeneficiario();
+        });
+
+        function initRubricas() {
+            const container = document.getElementById('rubricasContainer');
+            container.innerHTML = '';
+            Object.entries(categoriasRubricas).forEach(([categoria, rubricas]) => {
+                if(rubricas.length === 0) return;
+                const accordion = document.createElement('div');
+                accordion.className = 'accordion';
+                accordion.innerHTML = `
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>${categoria} <small style="font-weight:normal;">(${rubricas.length})</small></span>
+                        <span>▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <table class="data-table">
+                            <thead><tr><th width="80">Código</th><th>Descrição</th></tr></thead>
+                            <tbody>
+                                ${rubricas.map(r => `
+                                    <tr data-code="${r.code}" data-desc="${r.desc.toLowerCase()}">
+                                        <td><strong>${r.code}</strong></td><td>${r.desc}</td>
+                                    </tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+                container.appendChild(accordion);
+            });
+        }
+
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('span:last-child');
+            content.classList.toggle('show');
+            arrow.textContent = content.classList.contains('show') ? '▲' : '▼';
+        }
+
+        function filterRubricas() {
+            const searchTerm = document.getElementById('searchRubrica').value.toLowerCase();
+            const accordions = document.querySelectorAll('.accordion');
+            accordions.forEach(accordion => {
+                const rows = accordion.querySelectorAll('tbody tr');
+                let hasVisible = false;
+                rows.forEach(row => {
+                    const match = row.dataset.code.includes(searchTerm) || row.dataset.desc.includes(searchTerm);
+                    row.style.display = match ? '' : 'none';
+                    if (match) hasVisible = true;
+                });
+                if (hasVisible && searchTerm) {
+                    accordion.querySelector('.accordion-content').classList.add('show');
+                    accordion.querySelector('.accordion-header span:last-child').textContent = '▲';
+                }
+            });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const alvo = document.getElementById(`tab-${tabName}`);
+            const botao = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick') === `switchTab('${tabName}')`);
+            if (botao) botao.classList.add('active');
+            if (alvo) alvo.classList.add('active');
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                uploadedFile = file;
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileInfo').innerHTML = `<strong>✅ Arquivo selecionado:</strong><br>${file.name}`;
+                document.getElementById('btnClear').style.display = 'block';
+                document.getElementById('statusInfo').innerHTML = `<span style="color: #ed8936;">⏳ Lendo automaticamente...</span>`;
+                processPDF();
+            }
+        }
+
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files[0] && e.dataTransfer.files[0].type === 'application/pdf') {
+                document.getElementById('fileInput').files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: e.dataTransfer.files } });
+            }
+        });
+
+        // ============================================================
+        // TRATAMENTO MONETÁRIO — padrão brasileiro
+        // Mantém o valor numérico separado da apresentação visual.
+        // ============================================================
+        function parseValorMonetario(valor) {
+            if (valor === null || valor === undefined) return NaN;
+
+            let texto = String(valor).trim()
+                .replace(/R\$\s*/gi, '')
+                .replace(/[^0-9,.-]/g, '');
+
+            if (!texto) return NaN;
+
+            // Quando há ponto e vírgula, o último separador é o decimal.
+            if (texto.includes(',') && texto.includes('.')) {
+                if (texto.lastIndexOf(',') > texto.lastIndexOf('.')) {
+                    texto = texto.replace(/\./g, '').replace(',', '.');
+                } else {
+                    texto = texto.replace(/,/g, '');
+                }
+            } else if (texto.includes(',')) {
+                texto = texto.replace(/\./g, '').replace(',', '.');
+            } else if (texto.includes('.')) {
+                const partes = texto.split('.');
+                // 1.234 = mil e não 1,234; 00.00 = zero com centavos.
+                if (partes.length > 2 || (partes.length === 2 && partes[1].length === 3 && partes[0].length <= 3)) {
+                    texto = texto.replace(/\./g, '');
+                }
+            }
+
+            const numero = Number(texto);
+            return Number.isFinite(numero) ? numero : NaN;
+        }
+
+        function formatarMoedaBR(valor) {
+            const numero = typeof valor === 'number' ? valor : parseValorMonetario(valor);
+            if (!Number.isFinite(numero)) return 'R$ 0,00';
+            return numero.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatarCampoMoeda(input) {
+            let texto = input.value.replace(/[^0-9,.-]/g, '');
+            if (!texto) return;
+
+            const numero = parseValorMonetario(texto);
+            if (Number.isFinite(numero)) {
+                input.dataset.valorNumerico = String(numero);
+            }
+        }
+
+        function obterLimiteMonetario(id) {
+            const input = document.getElementById(id);
+            if (!input || !input.value.trim()) return null;
+            const valor = parseValorMonetario(input.value);
+            return Number.isFinite(valor) ? valor : null;
+        }
+
+        function extrairInformacoesGeraisPrimeiraPagina(linhas) {
+            const textoPagina = linhas.join(' ').replace(/\s+/g, ' ').trim();
+
+            // Emissão: prioriza uma data/hora associada a termos de emissão;
+            // se não existir, usa a primeira data/hora encontrada na primeira página.
+            const padraoDataHora = /(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/;
+            const linhaEmissao = linhas.find(l => /data\s+de\s+emiss[aã]o|emiss[aã]o|emitido|emitida/i.test(l) && padraoDataHora.test(l));
+            const matchEmissao = linhaEmissao ? linhaEmissao.match(padraoDataHora) : textoPagina.match(padraoDataHora);
+            objDadosPDF.dataEmissao = matchEmissao ? matchEmissao[1] : '';
+
+            // Período: prioriza uma linha explicitamente rotulada como período/competência.
+            const data = '(\\d{2}\\/\\d{2}\\/\\d{4})';
+            const mesAno = '(\\d{2}\\/\\d{4})';
+            const separador = '(?:a|até|ate|[-–—])';
+            const textoPeriodo = linhas.filter(l => /per[ií]odo|compet[eê]ncia|inicial|final/i.test(l)).join(' ');
+            const padroesPeriodo = [
+                new RegExp('(?:per[ií]odo(?:\\s+de)?|compet[eê]ncia(?:s)?)\\s*[:\\-]?\\s*' + data + '\\s*' + separador + '\\s*' + data, 'i'),
+                new RegExp('(?:per[ií]odo(?:\\s+de)?|compet[eê]ncia(?:s)?)\\s*[:\\-]?\\s*' + mesAno + '\\s*' + separador + '\\s*' + mesAno, 'i'),
+                new RegExp('(?:data\\s+)?inicial\\s*[:\\-]?\\s*' + data + '\\s*(?:até|ate|a|[-–—])\\s*(?:data\\s+)?final\\s*[:\\-]?\\s*' + data, 'i')
+            ];
+            for (const padrao of padroesPeriodo) {
+                const m = textoPeriodo.match(padrao);
+                if (m) { objDadosPDF.periodoInicial = m[1]; objDadosPDF.periodoFinal = m[2]; break; }
+            }
+
+            // Último fallback: procura uma faixa de datas na primeira página.
+            if (!objDadosPDF.periodoInicial) {
+                const m = textoPagina.match(new RegExp(data + '\\s*' + separador + '\\s*' + data));
+                if (m) { objDadosPDF.periodoInicial = m[1]; objDadosPDF.periodoFinal = m[2]; }
+            }
+        }
+
+        async function processPDF() {
+            if (!uploadedFile) return;
+            document.getElementById('statusInfo').innerHTML = `<span style="color: #ed8936;">⏳ Lendo arquivo (aguarde)...</span>`;
+
+            try {
+                const arrayBuffer = await uploadedFile.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+                let currentCompetencia = "Não localizada";
+                let currentStatus = "Não localizado";
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+
+                    let items = textContent.items.map(item => ({
+                        str: item.str,
+                        y: Math.round(item.transform[5]),
+                        x: Math.round(item.transform[4])
+                    }));
+
+                    items.sort((a, b) => {
+                        if (Math.abs(b.y - a.y) > 4) return b.y - a.y;
+                        return a.x - b.x;
+                    });
+
+                    let lines = [];
+                    let currentLine = [];
+                    let lastY = null;
+                    items.forEach(item => {
+                        if (lastY === null) lastY = item.y;
+                        if (Math.abs(item.y - lastY) > 4) {
+                            lines.push(currentLine.join(' '));
+                            currentLine = [];
+                            lastY = item.y;
+                        }
+                        currentLine.push(item.str.trim());
+                    });
+                    if (currentLine.length > 0) lines.push(currentLine.join(' '));
+                    lines = lines.map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+                    if (i === 1) extrairInformacoesGeraisPrimeiraPagina(lines);
+
+                    lines.forEach(linha => {
+                        let matchNome = linha.match(/Nome:\s*([A-Z\s\.\-ÇÃÁÉÍÓÚÂÊÔ]+)/i);
+                        if(matchNome && !objDadosPDF.nome) objDadosPDF.nome = matchNome[1].trim();
+
+                        let matchNB = linha.match(/NB:\s*([\d\.\-]+)/i);
+                        if(matchNB) objDadosPDF.nbs.push(matchNB[1].trim());
+
+                        let matchComp = linha.match(/^(\d{2}\/\d{4})/);
+                        if(matchComp && !/^\d{3}\s/.test(linha)) currentCompetencia = matchComp[1];
+
+                        if(linha.includes("Não Pago")) currentStatus = "Não Pago";
+                        else if(linha.includes("Pago") && !linha.includes("Não Pago")) currentStatus = "Pago";
+
+                        let matchRubrica = linha.match(/^(\d{3})\s+([A-Z0-9\s\.\-ÇÃÁÉÍÓÚÂÊÔ\/]+?)\s+R\$?\s*([\d\.,]+)/i);
+                        if(matchRubrica){
+                            let codigo = matchRubrica[1];
+                            let descricaoDoc = matchRubrica[2].trim();
+                            let valorBruto = matchRubrica[3];
+                            let valorNumero = parseValorMonetario(valorBruto);
+                            let valorDoc = formatarMoedaBR(valorNumero);
+
+                            if (objDadosPDF.rubricasUnicas[codigo]) objDadosPDF.rubricasUnicas[codigo].ocorrencias++;
+                            else objDadosPDF.rubricasUnicas[codigo] = { descricao_doc: descricaoDoc, descricao_ref: descricoesRubricas[codigo] || "Não encontrada na referência", ocorrencias: 1 };
+
+                            objDadosPDF.todasRubricasReal.push({ pagina: i, competencia: currentCompetencia, rubrica: codigo, descricao: descricaoDoc, valor: valorDoc, valorNumero: valorNumero, valorBruto: valorBruto, status: currentStatus });
+                        }
+                    });
+                }
+
+                objDadosPDF.nbs = [...new Set(objDadosPDF.nbs)];
+                if (objDadosPDF.nome) document.getElementById('nomeAutor').value = objDadosPDF.nome;
+
+                document.getElementById('statusInfo').innerHTML = `
+                    <span style="color: #38b2ac;">✓ Leitura concluída automaticamente</span><br>
+                    <small>${Object.keys(objDadosPDF.rubricasUnicas).length} rubricas únicas identificadas</small>`;
+
+                showAnaliseResults();
+                prepararTelaBuscador();
+                mostrarModalBeneficiario();
+
+            } catch (error) {
+                document.getElementById('statusInfo').innerHTML = `<span style="color:#e53e3e;">✕ Erro na leitura do documento</span>`;
+                alert('Erro crítico ao processar o PDF. Verifique se o arquivo não está corrompido ou protegido.');
+                console.error(error);
+            }
+        }
+
+        function showAnaliseResults() {
+            document.getElementById('analiseEmpty').style.display = 'none';
+            document.getElementById('analiseContent').style.display = 'block';
+
+            const tbody = document.getElementById('analiseTableBody');
+            tbody.innerHTML = '';
+
+            let totalOcorrencias = 0;
+            let semRef = 0;
+
+            Object.entries(objDadosPDF.rubricasUnicas).sort((a, b) => a[0].localeCompare(b[0])).forEach(([code, data]) => {
+                totalOcorrencias += data.ocorrencias;
+                if (data.descricao_ref === "Não encontrada na referência") semRef++;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${code}</strong></td>
+                    <td>${data.descricao_doc}</td>
+                    <td>${data.descricao_ref}</td>
+                    <td><span class="badge badge-success">${data.ocorrencias}</span></td>
+                `;
+            });
+
+            document.getElementById('metricTotal').textContent = Object.keys(objDadosPDF.rubricasUnicas).length;
+            document.getElementById('metricOcorrencias').textContent = totalOcorrencias;
+            document.getElementById('metricSemRef').textContent = semRef;
+        }
+
+        function showDescription(input, descId) {
+            const code = input.value.trim();
+            document.getElementById(descId).textContent = descricoesRubricas[code] || '';
+        }
+
+        function executarBuscaAutomatica() {
+            if (objDadosPDF.todasRubricasReal.length === 0) return;
+            executeSearch(false);
+        }
+
+        function onValorMinimoInput(input) {
+            const valorAnterior = input.dataset.valorNumerico || '';
+            formatarCampoMoeda(input);
+            const valor = obterLimiteMonetario('valorMinimo');
+            const maxInput = document.getElementById('valorMaximo');
+
+            // Ao iniciar o preenchimento do mínimo, o máximo recebe o mesmo valor apenas
+            // se ainda estiver vazio ou se ele estiver acompanhando automaticamente o mínimo.
+            if (valor !== null && (!maxInput.value.trim() || maxInput.dataset.autoPreenchido === 'true' || valorAnterior === '')) {
+                maxInput.value = formatarMoedaBR(valor);
+                maxInput.dataset.valorNumerico = String(valor);
+                maxInput.dataset.autoPreenchido = 'true';
+            }
+            executarBuscaAutomatica();
+        }
+
+        function onValorMaximoInput(input) {
+            formatarCampoMoeda(input);
+            input.dataset.autoPreenchido = 'false';
+            executarBuscaAutomatica();
+        }
+
+        function executeSearch(mostrarErro = true) {
+            if (objDadosPDF.todasRubricasReal.length === 0) {
+                if (mostrarErro) alert('Carregue um arquivo HISCRE para realizar a busca.');
+                return;
+            }
+
+            const filtros = [1,2,3,4].map(i => document.getElementById(`r${i}`).value.trim()).filter(v => v !== '');
+            const valorMinimo = obterLimiteMonetario('valorMinimo');
+            const valorMaximo = obterLimiteMonetario('valorMaximo');
+
+            if (valorMinimo !== null && valorMaximo !== null && valorMinimo > valorMaximo) {
+                if (mostrarErro) document.getElementById('totalRegistrosTopo').innerHTML = `<span style="color:#e53e3e;">O valor mínimo não pode ser maior que o valor máximo.</span>`;
+                return;
+            }
+
+            dadosFiltradosBuscador = objDadosPDF.todasRubricasReal.filter(item => {
+                const matchRubrica = filtros.length === 0 || filtros.includes(item.rubrica);
+                const valor = Number.isFinite(item.valorNumero) ? item.valorNumero : parseValorMonetario(item.valor);
+                const matchMin = valorMinimo === null || (Number.isFinite(valor) && valor >= valorMinimo);
+                const matchMax = valorMaximo === null || (Number.isFinite(valor) && valor <= valorMaximo);
+                return matchRubrica && matchMin && matchMax;
+            });
+
+            displayBuscadorResults();
+        }
+
+        function prepararTelaBuscador() {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const btnBuscador = document.querySelector('.tab-btn[onclick="switchTab(\'buscador\')"]');
+            if (btnBuscador) btnBuscador.classList.add('active');
+            document.getElementById('tab-buscador').classList.add('active');
+            document.getElementById('buscadorResult').style.display = 'block';
+            executeSearch(false);
+        }
+
+        function mostrarModalBeneficiario() {
+            document.getElementById('modalNome').textContent = objDadosPDF.nome || 'Não localizado';
+            document.getElementById('modalNB').textContent = objDadosPDF.nbs.length ? objDadosPDF.nbs.join(', ') : 'Não localizado';
+            document.getElementById('modalPeriodoInicial').textContent = objDadosPDF.periodoInicial || 'Não localizado';
+            document.getElementById('modalPeriodoFinal').textContent = objDadosPDF.periodoFinal || 'Não localizado';
+            document.getElementById('modalDataEmissao').textContent = objDadosPDF.dataEmissao || 'Não localizado';
+            const modal = document.getElementById('beneficiarioModal');
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function fecharModalBeneficiario() {
+            const modal = document.getElementById('beneficiarioModal');
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            const primeiroCampo = document.getElementById('r1');
+            if (primeiroCampo) primeiroCampo.focus();
+        }
+
+        function removerFiltros() {
+            [1,2,3,4].forEach(i => {
+                document.getElementById(`r${i}`).value = '';
+                document.getElementById(`desc${i}`).textContent = '';
+            });
+            ['valorMinimo','valorMaximo'].forEach(id => {
+                const input = document.getElementById(id);
+                input.value = '';
+                input.dataset.valorNumerico = '';
+                input.dataset.autoPreenchido = 'false';
+            });
+            currentFilter = 'all';
+            executeSearch(false);
+        }
+
+        function displayBuscadorResults() {
+            document.getElementById('buscadorResult').style.display = 'block';
+            document.getElementById('resultNome').textContent = objDadosPDF.nome || 'Não Localizado';
+            document.getElementById('resultNB').textContent = objDadosPDF.nbs.length > 0 ? objDadosPDF.nbs.join(', ') : 'Não Localizado';
+            document.getElementById('resultPeriodo').textContent = objDadosPDF.periodoInicial && objDadosPDF.periodoFinal ? `${objDadosPDF.periodoInicial} a ${objDadosPDF.periodoFinal}` : 'Não localizado';
+            document.getElementById('resultDataEmissao').textContent = objDadosPDF.dataEmissao || 'Não localizado';
+
+            const numProcesso = document.getElementById('numProcesso').value.trim();
+            document.getElementById('resultProcesso').textContent = numProcesso || 'Não informado';
+
+            const tbody = document.getElementById('buscadorTableBody');
+            tbody.innerHTML = '';
+
+            let dataExibida = dadosFiltradosBuscador;
+            if(currentFilter !== 'all') {
+                dataExibida = dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+            }
+
+            if(dataExibida.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Nenhum registro encontrado para este filtro.</td></tr>`;
+            } else {
+                dataExibida.forEach(d => {
+                    const statusClass = d.status === 'Pago' ? 'badge-success' : 'badge-warning';
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${d.pagina}</td>
+                        <td>${d.competencia}</td>
+                        <td><strong>${d.rubrica}</strong></td>
+                        <td>${d.descricao}</td>
+                        <td style="white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums;">${formatarMoedaBR(d.valorNumero)}</td>
+                        <td><span class="badge ${statusClass}">${d.status}</span></td>
+                    `;
+                });
+            }
+
+            const valorMinimo = obterLimiteMonetario('valorMinimo');
+            const valorMaximo = obterLimiteMonetario('valorMaximo');
+            const filtrosValorAtivos = valorMinimo !== null || valorMaximo !== null;
+            const sufixoValor = filtrosValorAtivos ? ' • filtro por valor ativo' : '';
+            document.getElementById('totalRegistrosTopo').innerHTML = `Total de registros listados: <strong>${dataExibida.length}</strong>${sufixoValor}`;
+        }
+
+        function toggleStatusFilter(filter) {
+            currentFilter = filter;
+            if (dadosFiltradosBuscador.length > 0) displayBuscadorResults();
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+            dadosFiltradosBuscador = [];
+
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('btnClear').style.display = 'none';
+            document.getElementById('statusInfo').textContent = 'Nenhum arquivo carregado';
+
+            document.getElementById('analiseEmpty').style.display = 'block';
+            document.getElementById('analiseContent').style.display = 'none';
+            document.getElementById('buscadorResult').style.display = 'none';
+
+            document.getElementById('nomeAutor').value = '';
+            document.getElementById('numProcesso').value = '';
+            document.getElementById('valorMinimo').value = '';
+            document.getElementById('valorMaximo').value = '';
+            document.getElementById('valorMinimo').dataset.valorNumerico = '';
+            document.getElementById('valorMaximo').dataset.valorNumerico = '';
+            document.getElementById('valorMinimo').dataset.autoPreenchido = 'false';
+            document.getElementById('valorMaximo').dataset.autoPreenchido = 'false';
+            fecharModalBeneficiario();
+        }
+
+        function exportToCSV() {
+            if (Object.keys(objDadosPDF.rubricasUnicas).length === 0) return;
+            let csv = 'Rubrica;Descrição no Documento;Descrição de Referência;Ocorrências\n';
+            Object.entries(objDadosPDF.rubricasUnicas).forEach(([code, data]) => {
+                csv += `${code};"${data.descricao_doc}";"${data.descricao_ref}";${data.ocorrencias}\n`;
+            });
+            downloadFile(csv, 'analise_rubricas_unicas.csv', 'text/csv');
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text('RELATÓRIO DE ANÁLISE DE RUBRICAS - HISCRE', 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('Buscador Institucional', 105, 30, { align: 'center' });
+
+            const tableData = Object.entries(objDadosPDF.rubricasUnicas).map(([code, data]) => [
+                code, data.descricao_doc, data.descricao_ref, data.ocorrencias
+            ]);
+            doc.autoTable({
+                startY: 40,
+                head: [['Rubrica', 'Descrição no Documento', 'Descrição de Referência', 'Ocorrências']],
+                body: tableData,
+                theme: 'grid'
+            });
+            doc.save('analise_rubricas_hiscre.pdf');
+        }
+
+        function exportBuscadorCSV() {
+            let dataExportar = currentFilter === 'all' ? dadosFiltradosBuscador : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+            if (dataExportar.length === 0) return;
+
+            let csv = 'Página;Competência;Rubrica;Descrição;Valor (R$);Status\n';
+            dataExportar.forEach(d => {
+                let valorNumerico = Number.isFinite(d.valorNumero) ? d.valorNumero : parseValorMonetario(d.valor);
+                let valorCSV = Number.isFinite(valorNumerico) ? valorNumerico.toFixed(2).replace('.', ',') : '0,00';
+                csv += `${d.pagina};${d.competencia};${d.rubrica};"${d.descricao}";${valorCSV};${d.status}\n`;
+            });
+            downloadFile(csv, 'busca_hiscre.csv', 'text/csv');
+        }
+
+        // ============================================================
+        // PDF CLÁSSICO (original - mantido)
+        // ============================================================
+        function exportBuscadorPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Faixa azul larga no topo
+            doc.setFillColor(44, 82, 130);
+            doc.rect(0, 0, 210, 25, 'F');
+
+            // Título em branco sobre a faixa azul
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(255, 255, 255);
+            doc.text('RELATÓRIO DE RUBRICAS HISCRE', 14, 16);
+
+            // Subtítulo
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text('Documento gerado a partir do sistema local', 14, 22);
+
+            // Linha verde delicada abaixo da faixa azul
+            doc.setDrawColor(56, 178, 172);
+            doc.setLineWidth(0.5);
+            doc.line(14, 28, 196, 28);
+
+            // Seção de Informações do Beneficiário
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(30, 58, 95);
+            doc.setFontSize(11);
+            // Ícone vetorial simples: evita glifos quebrados de emoji no PDF.
+            doc.setFillColor(44, 82, 130);
+            doc.circle(17, 35.5, 2.5, 'F');
+            doc.setFillColor(255, 255, 255);
+            doc.circle(17, 34.8, 0.75, 'F');
+            doc.roundedRect(15.5, 36, 3, 1.2, 0.5, 0.5, 'F');
+            doc.setTextColor(30, 58, 95);
+            doc.text('Informações do Beneficiário', 22, 38);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            const nomeAutora = document.getElementById('nomeAutor').value || objDadosPDF.nome || 'Não informado';
+            const nbsStr = objDadosPDF.nbs.length > 0 ? objDadosPDF.nbs.join(', ') : 'Não informado';
+            const dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+            const numProcesso = document.getElementById('numProcesso').value.trim() || 'Não informado';
+
+            const filtros = [
+                document.getElementById('r1').value.trim(),
+                document.getElementById('r2').value.trim(),
+                document.getElementById('r3').value.trim(),
+                document.getElementById('r4').value.trim()
+            ].filter(v => v !== '');
+
+            const rubricasStr = filtros.length > 0 ? filtros.join(', ') : 'Todas as rubricas';
+
+            doc.text(`Nome: ${nomeAutora}`, 14, 46);
+            doc.text(`NB(s): ${nbsStr}`, 110, 46);
+            doc.text(`Data da Análise: ${dataAtual}`, 14, 52);
+            doc.text(`Rubricas Buscadas: ${rubricasStr}`, 110, 52);
+
+            if(numProcesso !== 'Não informado') {
+                doc.text(`Número do Processo: ${numProcesso}`, 14, 58);
+            }
+
+            let dataExportar = currentFilter === 'all' ? dadosFiltradosBuscador : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+
+            const tableData = dataExportar.map(d => [
+                d.pagina.toString(),
+                d.competencia, 
+                d.rubrica, 
+                d.descricao, 
+                formatarMoedaBR(d.valorNumero), 
+                d.status
+            ]);
+
+            const startY = numProcesso !== 'Não informado' ? 66 : 60;
+
+            doc.autoTable({
+                startY: startY,
+                head: [['Pág.', 'Comp.', 'Rubrica', 'Descrição', 'Valor (R$)', 'Status']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [44, 82, 130],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 4,
+                    overflow: 'linebreak'
+                },
+                columnStyles: {
+                    0: { cellWidth: 15 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 75 },
+                    4: { cellWidth: 30 },
+                    5: { cellWidth: 20 }
+                },
+                didDrawPage: function (data) {
+                    doc.setFontSize(8);
+                    doc.setFont("helvetica", "italic");
+                    doc.setTextColor(100);
+                    doc.text('Gerado pelo Buscador de rubricas do HISCRE • Sistema desenvolvido para uso interno', 
+                        data.settings.margin.left, 
+                        doc.internal.pageSize.height - 10
+                    );
+                }
+            });
+
+            doc.save('relatorio_rubricas_hiscre.pdf');
+        }
+
+        // ============================================================
+        // PDF MODERNO — Design System Governamental / Enterprise
+        // ============================================================
+        function exportBuscadorPDFModerno() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+            // ─── PALETA INSTITUCIONAL ───
+            const C = {
+                primary:    [26, 54, 93],      // #1a365d
+                primaryMid: [44, 82, 130],     // #2c5282
+                primaryLt:  [43, 108, 176],    // #2b6cb0
+                accent:     [56, 178, 172],    // #38b2ac
+                success:    [22, 163, 74],     // #16a34a
+                danger:     [220, 38, 38],     // #dc2626
+                warning:    [217, 119, 6],     // #d97706
+                gray100:    [243, 244, 246],   // #f3f4f6
+                gray200:    [229, 231, 235],   // #e5e7eb
+                gray400:    [156, 163, 175],   // #9ca3af
+                gray500:    [107, 114, 128],   // #6b7280
+                gray600:    [75, 85, 99],      // #4b5563
+                gray700:    [55, 65, 81],      // #374151
+                gray800:    [31, 41, 55],      // #1f2937
+                white:      [255, 255, 255],
+                black:      [0, 0, 0]
+            };
+
+            // ─── HELPERS ───
+            const setFill = (c) => doc.setFillColor(c[0], c[1], c[2]);
+            const setText = (c) => doc.setTextColor(c[0], c[1], c[2]);
+            const setDraw = (c, w) => { doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(w || 0.2); };
+
+            // ─── DADOS ───
+            const nomeAutora = document.getElementById('nomeAutor').value || objDadosPDF.nome || 'Não informado';
+            const nbsStr = objDadosPDF.nbs.length > 0 ? objDadosPDF.nbs.join(', ') : 'Não informado';
+            const numProcesso = document.getElementById('numProcesso').value.trim() || 'Não informado';
+            const dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const filtros = [
+                document.getElementById('r1').value.trim(),
+                document.getElementById('r2').value.trim(),
+                document.getElementById('r3').value.trim(),
+                document.getElementById('r4').value.trim()
+            ].filter(v => v !== '');
+            const rubricasStr = filtros.length > 0 ? filtros.join(', ') : 'Todas as rubricas do documento';
+            const valorMinimo = obterLimiteMonetario('valorMinimo');
+            const valorMaximo = obterLimiteMonetario('valorMaximo');
+            const filtroValorStr = valorMinimo !== null || valorMaximo !== null
+                ? `Valor: ${valorMinimo !== null ? formatarMoedaBR(valorMinimo) : 'sem mínimo'} a ${valorMaximo !== null ? formatarMoedaBR(valorMaximo) : 'sem máximo'}`
+                : 'Sem filtro de valor';
+
+            let dataExportar = currentFilter === 'all' 
+                ? dadosFiltradosBuscador 
+                : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+
+            const totalRegistros = dataExportar.length;
+            const totalPagos = dataExportar.filter(d => d.status === 'Pago').length;
+            const totalNaoPagos = dataExportar.filter(d => d.status === 'Não Pago').length;
+            const rubricasUnicasCount = new Set(dataExportar.map(d => d.rubrica)).size;
+
+            // ═══════════════════════════════════════════════════════════
+            // PÁGINA 1 — CAPA / DASHBOARD
+            // ═══════════════════════════════════════════════════════════
+
+            // Fundo cinza claro
+            setFill(C.gray100);
+            doc.rect(0, 0, 210, 297, 'F');
+
+            // ─── HEADER INSTITUCIONAL ───
+            setFill(C.primary);
+            doc.rect(0, 0, 210, 42, 'F');
+            setFill(C.primaryMid);
+            doc.rect(140, 0, 70, 42, 'F');
+
+            // Detalhe diagonal decorativo
+            setDraw([255,255,255], 0.3);
+            doc.line(160, 0, 190, 42);
+            doc.line(162, 0, 192, 42);
+
+            // Logo / ícone
+            setFill(C.white);
+            doc.roundedRect(14, 10, 22, 22, 3, 3, 'F');
+            setText(C.primary);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('H', 25, 24, { align: 'center' });
+
+            // Título principal
+            setText(C.white);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Buscador Institucional de Rubricas', 42, 20);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Sistema de Análise Documental HISCRE', 42, 27);
+
+            // Badge no header
+            setDraw([255,255,255], 0.15);
+            doc.roundedRect(42, 31, 58, 7, 3.5, 3.5, 'S');
+            doc.setFontSize(8);
+            doc.text('Processamento 100% Local', 45, 35.5);
+
+            // Data no canto direito
+            setText([200,200,200]);
+            doc.setFontSize(9);
+            doc.text('DATA DA ANALISE', 170, 16, { align: 'right' });
+            doc.setFontSize(13);
+            doc.setFont('helvetica', 'bold');
+            doc.text(dataAtual, 196, 24, { align: 'right' });
+
+            // ─── SEPARADOR VERDE ───
+            setFill(C.accent);
+            doc.rect(0, 42, 210, 1.5, 'F');
+
+            // ─── SEÇÃO: INFORMAÇÕES DO BENEFICIÁRIO (Cards) ───
+            let y = 54;
+
+            setText(C.gray800);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INFORMACOES DO BENEFICIARIO', 14, y);
+
+            y += 10;
+
+            // Card 1 — Nome (6 colunas ~104mm)
+            setFill(C.white);
+            setDraw(C.gray200, 0.3);
+            doc.roundedRect(14, y, 104, 28, 3, 3, 'FD');
+            setFill(C.primary);
+            doc.roundedRect(18, y+4, 7, 7, 1.5, 1.5, 'F');
+            setText(C.white);
+            doc.setFontSize(6);
+            doc.text('U', 21.5, y+8.5, { align: 'center' });
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NOME DA PARTE AUTORA', 28, y+9);
+            setText(C.primary);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            const nomeTruncado = nomeAutora.length > 38 ? nomeAutora.substring(0, 38) + '...' : nomeAutora;
+            doc.text(nomeTruncado, 18, y+20);
+
+            // Card 2 — NB (3 colunas ~50mm)
+            setFill(C.white);
+            doc.roundedRect(122, y, 50, 28, 3, 3, 'FD');
+            setFill(C.success);
+            doc.roundedRect(126, y+4, 7, 7, 1.5, 1.5, 'F');
+            setText(C.white);
+            doc.setFontSize(6);
+            doc.text('#', 129.5, y+8.5, { align: 'center' });
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NB(s)', 136, y+9);
+            setText(C.gray800);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(nbsStr, 126, y+20);
+
+            // Card 3 — Processo (3 colunas ~24mm restante)
+            setFill(C.white);
+            doc.roundedRect(176, y, 20, 28, 3, 3, 'FD');
+            setFill(C.warning);
+            doc.roundedRect(180, y+4, 7, 7, 1.5, 1.5, 'F');
+            setText(C.white);
+            doc.setFontSize(6);
+            doc.text('P', 183.5, y+8.5, { align: 'center' });
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PROCESSO', 190, y+9);
+            setText(C.gray800);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'bold');
+            const procTruncado = numProcesso.length > 22 ? numProcesso.substring(0, 22) + '...' : numProcesso;
+            doc.text(procTruncado, 180, y+20);
+
+            y += 36;
+
+            // ─── MÉTRICAS RÁPIDAS (4 cards) ───
+            const metricCards = [
+                { label: 'RUBRICAS UNICAS', value: rubricasUnicasCount.toString(), color: C.primaryMid },
+                { label: 'TOTAL REGISTROS', value: totalRegistros.toString(), color: C.success },
+                { label: 'REGISTROS PAGOS', value: totalPagos.toString(), color: C.success },
+                { label: 'NAO PAGOS', value: totalNaoPagos.toString(), color: C.danger }
+            ];
+
+            const cardW = 44;
+            const cardGap = 3.3;
+            metricCards.forEach((m, i) => {
+                const cx = 14 + i * (cardW + cardGap);
+                setFill(C.white);
+                doc.roundedRect(cx, y, cardW, 26, 3, 3, 'FD');
+                setFill(m.color);
+                doc.rect(cx, y, 3, 26, 'F');
+                setText(C.gray500);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text(m.label, cx + 6, y + 8);
+                setText(C.gray800);
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.text(m.value, cx + 6, y + 21);
+            });
+
+            y += 34;
+
+            // ─── FILTROS APLICADOS ───
+            setFill(C.white);
+            doc.roundedRect(14, y, 182, 24, 3, 3, 'FD');
+            setFill(C.primary);
+            doc.rect(14, y, 3, 24, 'F');
+            setText(C.gray500);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RUBRICAS BUSCADAS', 20, y + 7);
+            setText(C.primary);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(rubricasStr, 20, y + 13);
+            setText(C.gray400);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Filtro de status: ${currentFilter === 'all' ? 'Todos' : currentFilter}`, 140, y + 8);
+            doc.text(filtroValorStr, 20, y + 19);
+
+            y += 32;
+
+            // ─── TABELA DATAGRID ───
+            setText(C.gray800);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RESULTADOS DA BUSCA', 14, y);
+            setText(C.gray500);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${totalRegistros} registros encontrados`, 14, y + 6);
+
+            y += 10;
+
+            const tableData = dataExportar.map(d => [
+                d.pagina.toString(),
+                d.competencia,
+                d.rubrica,
+                d.descricao,
+                formatarMoedaBR(d.valorNumero),
+                d.status
+            ]);
+
+            doc.autoTable({
+                startY: y,
+                head: [['Pag.', 'Comp.', 'Rubrica', 'Descricao', 'Valor (R$)', 'Status']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: C.primary,
+                    textColor: [255,255,255],
+                    fontStyle: 'bold',
+                    fontSize: 8,
+                    cellPadding: { top: 5, right: 4, bottom: 5, left: 4 }
+                },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: { top: 4, right: 4, bottom: 4, left: 4 },
+                    overflow: 'linebreak',
+                    lineColor: C.gray200,
+                    lineWidth: 0.2
+                },
+                alternateRowStyles: {
+                    fillColor: [250, 251, 252]
+                },
+                columnStyles: {
+                    0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+                    1: { cellWidth: 22, halign: 'center' },
+                    2: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+                    3: { cellWidth: 78 },
+                    4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+                    5: { cellWidth: 22, halign: 'center' }
+                },
+                didParseCell: function(data) {
+                    // Badges coloridos para status
+                    if (data.section === 'body' && data.column.index === 5) {
+                        const status = data.cell.raw;
+                        if (status === 'Pago') {
+                            data.cell.styles.fillColor = [220, 252, 231]; // green-100
+                            data.cell.styles.textColor = [22, 101, 52];  // green-800
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (status === 'Não Pago') {
+                            data.cell.styles.fillColor = [254, 226, 226]; // red-100
+                            data.cell.styles.textColor = [153, 27, 27];  // red-800
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                    // Badge colorido para rubrica (col 2)
+                    if (data.section === 'body' && data.column.index === 2) {
+                        const code = data.cell.raw;
+                        if (code.startsWith('1')) {
+                            data.cell.styles.fillColor = [239, 246, 255]; // blue-50
+                            data.cell.styles.textColor = [29, 78, 216]; // blue-700
+                        } else if (code.startsWith('2')) {
+                            data.cell.styles.fillColor = [254, 242, 242]; // red-50
+                            data.cell.styles.textColor = [185, 28, 28];  // red-700
+                        } else if (code.startsWith('3')) {
+                            data.cell.styles.fillColor = [240, 253, 244]; // green-50
+                            data.cell.styles.textColor = [21, 128, 61];  // green-700
+                        } else {
+                            data.cell.styles.fillColor = [250, 250, 250];
+                            data.cell.styles.textColor = [75, 85, 99];
+                        }
+                    }
+                },
+                didDrawPage: function(data) {
+                    // Footer institucional
+                    const pageHeight = doc.internal.pageSize.height;
+                    setFill(C.gray100);
+                    doc.rect(0, pageHeight - 18, 210, 18, 'F');
+                    setDraw(C.gray200, 0.3);
+                    doc.line(14, pageHeight - 18, 196, pageHeight - 18);
+
+                    setText(C.gray500);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Buscador de Rubricas do HISCRE', 14, pageHeight - 10);
+
+                    setText(C.gray400);
+                    doc.setFontSize(7);
+                    doc.text('Sistema desenvolvido para uso interno - Documento confidencial', 14, pageHeight - 6);
+
+                    const pageStr = `Pagina ${data.pageNumber} de ${data.pageCount}`;
+                    doc.text(pageStr, 196, pageHeight - 8, { align: 'right' });
+                    doc.text(`Gerado em ${dataAtual} as ${horaAtual}`, 196, pageHeight - 4, { align: 'right' });
+                },
+                margin: { top: 10, right: 14, bottom: 22, left: 14 }
+            });
+
+            // ─── FOOTER DA CAPA ───
+            const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 250;
+            if (finalY < 270) {
+                setFill(C.white);
+                doc.roundedRect(14, finalY, 182, 22, 3, 3, 'FD');
+                setFill(C.primary);
+                doc.roundedRect(14, finalY, 22, 22, 3, 3, 'F');
+                setText(C.white);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('H', 25, finalY + 13, { align: 'center' });
+
+                setText(C.gray800);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Buscador de Rubricas do HISCRE', 40, finalY + 9);
+                setText(C.gray400);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Sistema desenvolvido para uso interno', 40, finalY + 15);
+
+                setText(C.gray400);
+                doc.setFontSize(8);
+                doc.text(`Gerado em ${dataAtual} as ${horaAtual}`, 196, finalY + 12, { align: 'right' });
+            }
+
+            doc.save('relatorio_rubricas_hiscre_moderno.pdf');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob(['\uFEFF' + content], { type: type + ';charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
