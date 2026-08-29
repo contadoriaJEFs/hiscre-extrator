@@ -308,6 +308,15 @@
         }
         .filter-actions { margin-bottom: 0; }
         .filter-actions .btn { width: auto; min-width: 160px; }
+        .copy-values-row { display: flex; align-items: center; margin: 0 0 20px; }
+        .btn-copy-values {
+            width: auto !important; margin: 0 !important; padding: 6px 10px !important;
+            font-size: 12px !important; font-weight: 600; color: #64748b;
+            background: transparent; border: 1px solid #cbd5e0; border-radius: 5px;
+        }
+        .btn-copy-values:hover { background: #f8fafc; color: #2c5282; border-color: #94a3b8; }
+        .copy-feedback { font-size: 11px; color: #38a169; margin-left: 8px; opacity: 0; transition: opacity .2s; }
+        .copy-feedback.show { opacity: 1; }
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(15, 39, 68, 0.58);
             display: none; align-items: center; justify-content: center;
@@ -535,11 +544,11 @@
 
                     <div id="buscadorResult" style="display: none; margin-top: 30px;">
                         <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-                            <h4 style="color: #2c5282; margin-bottom: 15px;">🔗 Informações do Beneficiário:</h4>
+                            <h4 style="color: #2c5282; margin-bottom: 15px;">🔗 Informações do Documento Carregado:</h4>
                             <p><strong>Nome (PDF):</strong> <span id="resultNome">-</span></p>
                             <p><strong>NB(s) encontrados:</strong> <span id="resultNB">-</span></p>
                             <p><strong>Período:</strong> <span id="resultPeriodo">-</span></p>
-                            <p><strong>Data de emissão:</strong> <span id="resultDataEmissao">-</span></p>
+                            <p><strong>Data de emissão do documento:</strong> <span id="resultDataEmissao">-</span></p>
                             <p><strong>Número do Processo:</strong> <span id="resultProcesso">-</span></p>
                         </div>
 
@@ -557,6 +566,13 @@
                             <button class="btn" style="background: #e53e3e; color: white;" onclick="toggleStatusFilter('Não Pago')">
                                 Exibir apenas Não Pagos
                             </button>
+
+                            <div class="copy-values-row" style="margin-left: auto; margin-bottom: 0;">
+                                <button type="button" class="btn btn-copy-values" onclick="copiarValoresExibidos()" title="Copia toda a tabela, com cabeçalhos e colunas, pronta para colar no Excel">
+                                    ⧉ Copiar tabela para Excel
+                                </button>
+                                <span id="copyValuesFeedback" class="copy-feedback">Tabela copiada</span>
+                            </div>
                         </div>
 
                         <!-- GRUPO DE EXPORTAÇÃO COM DUAS OPÇÕES -->
@@ -599,7 +615,7 @@
             <div class="modal-header">
                 <div>
                     <span class="modal-kicker">LEITURA CONCLUÍDA</span>
-                    <h3 id="modalTitulo">Informações do Beneficiário</h3>
+                    <h3 id="modalTitulo">Informações do Documento Carregado</h3>
                 </div>
                 <button class="modal-close" type="button" onclick="fecharModalBeneficiario()" aria-label="Fechar">×</button>
             </div>
@@ -621,8 +637,12 @@
                         <span>Período final</span>
                         <strong id="modalPeriodoFinal">—</strong>
                     </div>
+                    <div class="modal-info-card">
+                        <span>Competências encontradas</span>
+                        <strong id="modalCompetencias">—</strong>
+                    </div>
                     <div class="modal-info-card modal-info-wide">
-                        <span>Data de emissão</span>
+                        <span>Data de emissão do documento</span>
                         <strong id="modalDataEmissao">—</strong>
                     </div>
                 </div>
@@ -679,7 +699,7 @@
         }
 
         let uploadedFile = null;
-        let objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+        let objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], competenciasEncontradas: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
         let currentFilter = 'all';
         let dadosFiltradosBuscador = [];
 
@@ -878,7 +898,7 @@
                 const arrayBuffer = await uploadedFile.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-                objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+                objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], competenciasEncontradas: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
                 let currentCompetencia = "Não localizada";
                 let currentStatus = "Não localizado";
 
@@ -941,6 +961,27 @@
                             objDadosPDF.todasRubricasReal.push({ pagina: i, competencia: currentCompetencia, rubrica: codigo, descricao: descricaoDoc, valor: valorDoc, valorNumero: valorNumero, valorBruto: valorBruto, status: currentStatus });
                         }
                     });
+                }
+
+                // O período do documento é determinado pelas competências efetivamente
+                // encontradas nos registros extraídos, e não pela data de emissão.
+                const competenciasEncontradas = [...new Set(
+                    objDadosPDF.todasRubricasReal
+                        .map(d => d.competencia)
+                        .filter(c => /^\d{2}\/\d{4}$/.test(c))
+                )].sort((a, b) => {
+                    const [ma, aa] = a.split('/').map(Number);
+                    const [mb, ab] = b.split('/').map(Number);
+                    return (aa * 12 + ma) - (ab * 12 + mb);
+                });
+
+                objDadosPDF.competenciasEncontradas = competenciasEncontradas;
+                if (competenciasEncontradas.length > 0) {
+                    objDadosPDF.periodoInicial = competenciasEncontradas[0];
+                    objDadosPDF.periodoFinal = competenciasEncontradas[competenciasEncontradas.length - 1];
+                } else {
+                    objDadosPDF.periodoInicial = '';
+                    objDadosPDF.periodoFinal = '';
                 }
 
                 objDadosPDF.nbs = [...new Set(objDadosPDF.nbs)];
@@ -1062,6 +1103,7 @@
             document.getElementById('modalNB').textContent = objDadosPDF.nbs.length ? objDadosPDF.nbs.join(', ') : 'Não localizado';
             document.getElementById('modalPeriodoInicial').textContent = objDadosPDF.periodoInicial || 'Não localizado';
             document.getElementById('modalPeriodoFinal').textContent = objDadosPDF.periodoFinal || 'Não localizado';
+            document.getElementById('modalCompetencias').textContent = objDadosPDF.competenciasEncontradas?.length || 0;
             document.getElementById('modalDataEmissao').textContent = objDadosPDF.dataEmissao || 'Não localizado';
             const modal = document.getElementById('beneficiarioModal');
             modal.classList.add('show');
@@ -1138,9 +1180,98 @@
             if (dadosFiltradosBuscador.length > 0) displayBuscadorResults();
         }
 
+        // Copia toda a tabela atualmente exibida, com cabeçalho e todas as colunas.
+        // Usa TSV (tabulação) para que o Excel distribua cada campo em sua própria célula.
+        async function copiarValoresExibidos() {
+            if (dadosFiltradosBuscador.length === 0) return;
+
+            const dataExibida = currentFilter === 'all'
+                ? dadosFiltradosBuscador
+                : dadosFiltradosBuscador.filter(d => d.status === currentFilter);
+
+            if (dataExibida.length === 0) return;
+
+            const limparCampoExcel = (valor) => String(valor ?? '')
+                .replace(/\t/g, ' ')
+                .replace(/\r?\n/g, ' ')
+                .trim();
+
+            // Cabeçalho + todas as colunas da tabela, separados por TAB.
+            // O valor monetário permanece no padrão brasileiro, sem "R$",
+            // permitindo que o Excel reconheça a célula como número em pt-BR.
+            const linhas = [
+                ['Página', 'Competência', 'Rubrica', 'Descrição', 'Valor (R$)', 'Status'],
+                ...dataExibida.map(d => {
+                    const numero = Number.isFinite(d.valorNumero)
+                        ? d.valorNumero
+                        : parseValorMonetario(d.valor);
+                    const valor = Number.isFinite(numero)
+                        ? numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '0,00';
+
+                    return [
+                        d.pagina,
+                        d.competencia,
+                        d.rubrica,
+                        d.descricao,
+                        valor,
+                        d.status
+                    ];
+                })
+            ];
+
+            const tsv = linhas
+                .map(linha => linha.map(limparCampoExcel).join('\t'))
+                .join('\r\n');
+
+            // Também prepara uma versão HTML. Quando o navegador permite
+            // ClipboardItem, o Excel pode receber a estrutura tabular diretamente.
+            const escapeHtml = (valor) => String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+
+            const html = '<table>' + linhas.map((linha, indice) => {
+                const tag = indice === 0 ? 'th' : 'td';
+                return '<tr>' + linha.map(celula => `<${tag}>${escapeHtml(limparCampoExcel(celula))}</${tag}>`).join('') + '</tr>';
+            }).join('') + '</table>';
+
+            try {
+                if (navigator.clipboard && window.ClipboardItem) {
+                    const item = new ClipboardItem({
+                        'text/plain': new Blob([tsv], { type: 'text/plain' }),
+                        'text/html': new Blob([html], { type: 'text/html' })
+                    });
+                    await navigator.clipboard.write([item]);
+                } else if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(tsv);
+                } else {
+                    throw new Error('Clipboard API indisponível');
+                }
+            } catch (e) {
+                const textarea = document.createElement('textarea');
+                textarea.value = tsv;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                document.execCommand('copy');
+                textarea.remove();
+            }
+
+            const feedback = document.getElementById('copyValuesFeedback');
+            feedback.textContent = `${dataExibida.length + 1} linha(s) copiadas — tabela completa`;
+            feedback.classList.add('show');
+            clearTimeout(window._copyFeedbackTimer);
+            window._copyFeedbackTimer = setTimeout(() => feedback.classList.remove('show'), 2200);
+        }
+
         function clearFile() {
             uploadedFile = null;
-            objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
+            objDadosPDF = { nome: "", nbs: [], rubricasUnicas: {}, todasRubricasReal: [], competenciasEncontradas: [], periodoInicial: "", periodoFinal: "", dataEmissao: "" };
             dadosFiltradosBuscador = [];
 
             document.getElementById('fileInput').value = '';
@@ -1232,7 +1363,7 @@
             doc.setLineWidth(0.5);
             doc.line(14, 28, 196, 28);
 
-            // Seção de Informações do Beneficiário
+            // Seção de Informações do Documento Carregado
             doc.setFont("helvetica", "bold");
             doc.setTextColor(30, 58, 95);
             doc.setFontSize(11);
@@ -1243,13 +1374,13 @@
             doc.circle(17, 34.8, 0.75, 'F');
             doc.roundedRect(15.5, 36, 3, 1.2, 0.5, 0.5, 'F');
             doc.setTextColor(30, 58, 95);
-            doc.text('Informações do Beneficiário', 22, 38);
+            doc.text('Informações do Documento Carregado', 22, 38);
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             const nomeAutora = document.getElementById('nomeAutor').value || objDadosPDF.nome || 'Não informado';
             const nbsStr = objDadosPDF.nbs.length > 0 ? objDadosPDF.nbs.join(', ') : 'Não informado';
-            const dataAtual = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+            const dataEmissaoDocumento = objDadosPDF.dataEmissao || 'Não localizada';
             const numProcesso = document.getElementById('numProcesso').value.trim() || 'Não informado';
 
             const filtros = [
@@ -1263,7 +1394,7 @@
 
             doc.text(`Nome: ${nomeAutora}`, 14, 46);
             doc.text(`NB(s): ${nbsStr}`, 110, 46);
-            doc.text(`Data da Análise: ${dataAtual}`, 14, 52);
+            doc.text(`Data de emissão do documento: ${dataEmissaoDocumento}`, 14, 52);
             doc.text(`Rubricas Buscadas: ${rubricasStr}`, 110, 52);
 
             if(numProcesso !== 'Não informado') {
@@ -1427,22 +1558,22 @@
             // Data no canto direito
             setText([200,200,200]);
             doc.setFontSize(9);
-            doc.text('DATA DA ANALISE', 170, 16, { align: 'right' });
-            doc.setFontSize(13);
+            doc.text('EMISSÃO DO DOCUMENTO', 170, 16, { align: 'right' });
+            doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text(dataAtual, 196, 24, { align: 'right' });
+            doc.text(objDadosPDF.dataEmissao || 'Não localizada', 196, 24, { align: 'right' });
 
             // ─── SEPARADOR VERDE ───
             setFill(C.accent);
             doc.rect(0, 42, 210, 1.5, 'F');
 
-            // ─── SEÇÃO: INFORMAÇÕES DO BENEFICIÁRIO (Cards) ───
+            // ─── SEÇÃO: INFORMAÇÕES DO DOCUMENTO CARREGADO (Cards) ───
             let y = 54;
 
             setText(C.gray800);
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text('INFORMACOES DO BENEFICIARIO', 14, y);
+            doc.text('INFORMACOES DO DOCUMENTO CARREGADO', 14, y);
 
             y += 10;
 
