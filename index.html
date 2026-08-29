@@ -308,6 +308,7 @@
         }
         .filter-actions { margin-bottom: 0; }
         .filter-actions .btn { width: auto; min-width: 160px; }
+        .value-warning { margin-top: 10px; padding: 10px 12px; border-left: 3px solid #ed8936; background: #fffaf0; color: #744210; border-radius: 5px; font-size: 12px; line-height: 1.5; }
         .copy-values-row { display: flex; align-items: center; margin: 0 0 20px; }
         .btn-copy-values {
             width: auto !important; margin: 0 !important; padding: 6px 10px !important;
@@ -317,6 +318,36 @@
         .btn-copy-values:hover { background: #f8fafc; color: #2c5282; border-color: #94a3b8; }
         .copy-feedback { font-size: 11px; color: #38a169; margin-left: 8px; opacity: 0; transition: opacity .2s; }
         .copy-feedback.show { opacity: 1; }
+        /* Layout compacto para reduzir rolagem e aproveitar melhor a largura */
+        .main-container { max-width: 1450px; padding: 18px 20px; }
+        .content-wrapper { gap: 16px; }
+        .sidebar { width: 270px; }
+        .tabs-container { min-width: 0; }
+        .tab-content { padding: 22px; }
+        .compact-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .compact-row .form-group { margin-bottom: 8px; }
+        .compact-row .form-group input { padding: 9px 10px; }
+        .compact-filter-title { margin: 14px 0 10px !important; }
+        .value-filter-box { margin-top: 10px; padding: 12px 14px; }
+        .value-filter-box .form-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .value-filter-box .form-group label { margin-bottom: 4px; }
+        .value-filter-box .form-group input { padding: 8px 10px; }
+        .value-filter-box small { display: block; margin-top: 8px; }
+        .filter-actions { margin-top: 10px !important; }
+        .filter-actions .btn { min-width: 145px; padding: 9px 14px; }
+        .document-info-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; }
+        .document-info-grid p { margin: 0; padding: 9px 10px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; }
+        @media (max-width: 1050px) {
+            .main-container { max-width: 1200px; }
+            .sidebar { width: 250px; }
+            .compact-row, .value-filter-box .form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .document-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 760px) {
+            .content-wrapper { flex-direction: column; }
+            .sidebar { width: 100%; }
+            .compact-row, .value-filter-box .form-row, .document-info-grid { grid-template-columns: 1fr; }
+        }
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(15, 39, 68, 0.58);
             display: none; align-items: center; justify-content: center;
@@ -482,7 +513,7 @@
                         • O sistema localiza o status de pagamento real linha a linha do PDF.
                     </div>
 
-                    <div class="form-row" style="margin-bottom: 20px;">
+                    <div class="form-row compact-process-row" style="margin-bottom: 8px;">
                         <div class="form-group">
                             <label>Número do Processo</label>
                             <input type="text" id="numProcesso" placeholder="Ex: 0001234-55.2023.5.05.0000">
@@ -493,9 +524,9 @@
                         </div>
                     </div>
 
-                    <h3 style="color: #2c5282; margin: 20px 0 15px;">🔎 Filtrar Resultados (Opcional)</h3>
+                    <h3 class="compact-filter-title" style="color: #2c5282; margin: 20px 0 15px;">🔎 Filtrar Resultados (Opcional)</h3>
 
-                    <div class="form-row">
+                    <div class="form-row compact-row">
                         <div class="form-group">
                             <label>Rubrica 1</label>
                             <input type="text" class="rubrica-input" id="r1" placeholder="Ex: 101" maxlength="3" oninput="showDescription(this, 'desc1'); executarBuscaAutomatica()">
@@ -506,9 +537,6 @@
                             <input type="text" class="rubrica-input" id="r2" placeholder="Ex: 201" maxlength="3" oninput="showDescription(this, 'desc2'); executarBuscaAutomatica()">
                             <small id="desc2" style="color: #718096;"></small>
                         </div>
-                    </div>
-
-                    <div class="form-row" style="margin-top: 15px;">
                         <div class="form-group">
                             <label>Rubrica 3</label>
                             <input type="text" class="rubrica-input" id="r3" placeholder="Ex: 104" maxlength="3" oninput="showDescription(this, 'desc3'); executarBuscaAutomatica()">
@@ -522,18 +550,27 @@
                     </div>
 
                     <div class="value-filter-box">
-                        <div class="value-filter-title">💰 Filtro por valor</div>
+                        <div class="value-filter-title">💰 Consultar valores exatos</div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="valorMinimo">Valor mínimo (R$)</label>
-                                <input type="text" id="valorMinimo" inputmode="decimal" placeholder="Ex: 1.000,00" oninput="onValorMinimoInput(this)">
+                                <label for="valor1">Valor 1 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor1" inputmode="decimal" placeholder="Ex: 678,00" oninput="onValorConsultaInput(this)">
                             </div>
                             <div class="form-group">
-                                <label for="valorMaximo">Valor máximo (R$)</label>
-                                <input type="text" id="valorMaximo" inputmode="decimal" placeholder="Ex: 5.000,00" oninput="onValorMaximoInput(this)">
+                                <label for="valor2">Valor 2 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor2" inputmode="decimal" placeholder="Ex: 608,39" oninput="onValorConsultaInput(this)">
+                            </div>
+                            <div class="form-group">
+                                <label for="valor3">Valor 3 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor3" inputmode="decimal" placeholder="Ex: 69,00" oninput="onValorConsultaInput(this)">
+                            </div>
+                            <div class="form-group">
+                                <label for="valor4">Valor 4 (R$)</label>
+                                <input type="text" class="valor-consulta" id="valor4" inputmode="decimal" placeholder="Ex: 14,14" oninput="onValorConsultaInput(this)">
                             </div>
                         </div>
-                        <small>Ao informar o valor mínimo, o máximo recebe inicialmente o mesmo valor e permanece livre para alteração. O filtro é aplicado automaticamente.</small>
+                        <small>Os valores são consultados individualmente. Se houver no documento um valor com diferença de exatamente R$ 0,01 para algum valor informado, o sistema avisará sem incluir esse valor automaticamente no resultado.</small>
+                        <div id="avisosValores" class="value-warning" style="display:none;"></div>
                     </div>
 
                     <div class="button-group filter-actions" style="margin-top: 18px;">
@@ -543,13 +580,15 @@
                     </div>
 
                     <div id="buscadorResult" style="display: none; margin-top: 30px;">
-                        <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-                            <h4 style="color: #2c5282; margin-bottom: 15px;">🔗 Informações do Documento Carregado:</h4>
-                            <p><strong>Nome (PDF):</strong> <span id="resultNome">-</span></p>
-                            <p><strong>NB(s) encontrados:</strong> <span id="resultNB">-</span></p>
-                            <p><strong>Período:</strong> <span id="resultPeriodo">-</span></p>
-                            <p><strong>Data de emissão do documento:</strong> <span id="resultDataEmissao">-</span></p>
-                            <p><strong>Número do Processo:</strong> <span id="resultProcesso">-</span></p>
+                        <div style="background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 14px; border: 1px solid #e2e8f0;">
+                            <h4 style="color: #2c5282; margin-bottom: 9px;">🔗 Informações do Documento Carregado</h4>
+                            <div class="document-info-grid">
+                                <p><strong>Nome:</strong> <span id="resultNome">-</span></p>
+                                <p><strong>NB(s):</strong> <span id="resultNB">-</span></p>
+                                <p><strong>Período:</strong> <span id="resultPeriodo">-</span></p>
+                                <p><strong>Emissão:</strong> <span id="resultDataEmissao">-</span></p>
+                                <p><strong>Processo:</strong> <span id="resultProcesso">-</span></p>
+                            </div>
                         </div>
 
                         <div class="total-info" id="totalRegistrosTopo">
@@ -1040,26 +1079,60 @@
             executeSearch(false);
         }
 
-        function onValorMinimoInput(input) {
-            const valorAnterior = input.dataset.valorNumerico || '';
-            formatarCampoMoeda(input);
-            const valor = obterLimiteMonetario('valorMinimo');
-            const maxInput = document.getElementById('valorMaximo');
+        function obterValoresConsultados() {
+            return [1, 2, 3, 4].map(i => {
+                const input = document.getElementById(`valor${i}`);
+                if (!input || !input.value.trim()) return null;
+                const valor = parseValorMonetario(input.value);
+                return Number.isFinite(valor) ? Math.round(valor * 100) / 100 : null;
+            }).filter(v => v !== null);
+        }
 
-            // Ao iniciar o preenchimento do mínimo, o máximo recebe o mesmo valor apenas
-            // se ainda estiver vazio ou se ele estiver acompanhando automaticamente o mínimo.
-            if (valor !== null && (!maxInput.value.trim() || maxInput.dataset.autoPreenchido === 'true' || valorAnterior === '')) {
-                maxInput.value = formatarMoedaBR(valor);
-                maxInput.dataset.valorNumerico = String(valor);
-                maxInput.dataset.autoPreenchido = 'true';
-            }
+        function onValorConsultaInput(input) {
+            const texto = input.value.replace(/[^0-9,.-]/g, '');
+            input.value = texto;
+            const valor = parseValorMonetario(texto);
+            input.dataset.valorNumerico = Number.isFinite(valor) ? String(Math.round(valor * 100) / 100) : '';
             executarBuscaAutomatica();
         }
 
-        function onValorMaximoInput(input) {
-            formatarCampoMoeda(input);
-            input.dataset.autoPreenchido = 'false';
-            executarBuscaAutomatica();
+        function centavos(valor) {
+            return Math.round(Number(valor) * 100);
+        }
+
+        function formatarValorConsulta(valor) {
+            return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function atualizarAvisosValores(valoresConsultados) {
+            const box = document.getElementById('avisosValores');
+            if (!box) return;
+
+            const avisos = [];
+            const valoresDocumento = objDadosPDF.todasRubricasReal
+                .map(d => Number.isFinite(d.valorNumero) ? d.valorNumero : parseValorMonetario(d.valor))
+                .filter(v => Number.isFinite(v));
+
+            valoresConsultados.forEach(valor => {
+                const alvoCent = centavos(valor);
+                const proximos = [...new Set(
+                    valoresDocumento
+                        .filter(v => Math.abs(centavos(v) - alvoCent) === 1)
+                        .map(v => Math.round(v * 100) / 100)
+                )].sort((a, b) => a - b);
+
+                if (proximos.length) {
+                    avisos.push(`O valor consultado <strong>R$ ${formatarValorConsulta(valor)}</strong> possui no documento valor(es) com diferença de 1 centavo: <strong>${proximos.map(v => 'R$ ' + formatarValorConsulta(v)).join(', ')}</strong>.`);
+                }
+            });
+
+            if (avisos.length) {
+                box.innerHTML = '⚠️ ' + avisos.join('<br>');
+                box.style.display = 'block';
+            } else {
+                box.innerHTML = '';
+                box.style.display = 'none';
+            }
         }
 
         function executeSearch(mostrarErro = true) {
@@ -1069,20 +1142,14 @@
             }
 
             const filtros = [1,2,3,4].map(i => document.getElementById(`r${i}`).value.trim()).filter(v => v !== '');
-            const valorMinimo = obterLimiteMonetario('valorMinimo');
-            const valorMaximo = obterLimiteMonetario('valorMaximo');
-
-            if (valorMinimo !== null && valorMaximo !== null && valorMinimo > valorMaximo) {
-                if (mostrarErro) document.getElementById('totalRegistrosTopo').innerHTML = `<span style="color:#e53e3e;">O valor mínimo não pode ser maior que o valor máximo.</span>`;
-                return;
-            }
+            const valoresConsultados = obterValoresConsultados();
+            atualizarAvisosValores(valoresConsultados);
 
             dadosFiltradosBuscador = objDadosPDF.todasRubricasReal.filter(item => {
                 const matchRubrica = filtros.length === 0 || filtros.includes(item.rubrica);
                 const valor = Number.isFinite(item.valorNumero) ? item.valorNumero : parseValorMonetario(item.valor);
-                const matchMin = valorMinimo === null || (Number.isFinite(valor) && valor >= valorMinimo);
-                const matchMax = valorMaximo === null || (Number.isFinite(valor) && valor <= valorMaximo);
-                return matchRubrica && matchMin && matchMax;
+                const matchValor = valoresConsultados.length === 0 || (Number.isFinite(valor) && valoresConsultados.some(v => centavos(valor) === centavos(v)));
+                return matchRubrica && matchValor;
             });
 
             displayBuscadorResults();
@@ -1123,12 +1190,12 @@
                 document.getElementById(`r${i}`).value = '';
                 document.getElementById(`desc${i}`).textContent = '';
             });
-            ['valorMinimo','valorMaximo'].forEach(id => {
-                const input = document.getElementById(id);
-                input.value = '';
-                input.dataset.valorNumerico = '';
-                input.dataset.autoPreenchido = 'false';
+            [1,2,3,4].forEach(i => {
+                const input = document.getElementById(`valor${i}`);
+                if (input) { input.value = ''; input.dataset.valorNumerico = ''; }
             });
+            const avisosValores = document.getElementById('avisosValores');
+            if (avisosValores) { avisosValores.innerHTML = ''; avisosValores.style.display = 'none'; }
             currentFilter = 'all';
             executeSearch(false);
         }
@@ -1168,10 +1235,8 @@
                 });
             }
 
-            const valorMinimo = obterLimiteMonetario('valorMinimo');
-            const valorMaximo = obterLimiteMonetario('valorMaximo');
-            const filtrosValorAtivos = valorMinimo !== null || valorMaximo !== null;
-            const sufixoValor = filtrosValorAtivos ? ' • filtro por valor ativo' : '';
+            const valoresConsultados = obterValoresConsultados();
+            const sufixoValor = valoresConsultados.length ? ` • ${valoresConsultados.length} valor(es) consultado(s)` : '';
             document.getElementById('totalRegistrosTopo').innerHTML = `Total de registros listados: <strong>${dataExibida.length}</strong>${sufixoValor}`;
         }
 
@@ -1285,12 +1350,12 @@
 
             document.getElementById('nomeAutor').value = '';
             document.getElementById('numProcesso').value = '';
-            document.getElementById('valorMinimo').value = '';
-            document.getElementById('valorMaximo').value = '';
-            document.getElementById('valorMinimo').dataset.valorNumerico = '';
-            document.getElementById('valorMaximo').dataset.valorNumerico = '';
-            document.getElementById('valorMinimo').dataset.autoPreenchido = 'false';
-            document.getElementById('valorMaximo').dataset.autoPreenchido = 'false';
+            [1,2,3,4].forEach(i => {
+                const input = document.getElementById(`valor${i}`);
+                if (input) { input.value = ''; input.dataset.valorNumerico = ''; }
+            });
+            const avisosValores = document.getElementById('avisosValores');
+            if (avisosValores) { avisosValores.innerHTML = ''; avisosValores.style.display = 'none'; }
             fecharModalBeneficiario();
         }
 
@@ -1497,10 +1562,9 @@
                 document.getElementById('r4').value.trim()
             ].filter(v => v !== '');
             const rubricasStr = filtros.length > 0 ? filtros.join(', ') : 'Todas as rubricas do documento';
-            const valorMinimo = obterLimiteMonetario('valorMinimo');
-            const valorMaximo = obterLimiteMonetario('valorMaximo');
-            const filtroValorStr = valorMinimo !== null || valorMaximo !== null
-                ? `Valor: ${valorMinimo !== null ? formatarMoedaBR(valorMinimo) : 'sem mínimo'} a ${valorMaximo !== null ? formatarMoedaBR(valorMaximo) : 'sem máximo'}`
+            const valoresConsultados = obterValoresConsultados();
+            const filtroValorStr = valoresConsultados.length
+                ? `Valores: ${valoresConsultados.map(v => formatarMoedaBR(v)).join(', ')}`
                 : 'Sem filtro de valor';
 
             let dataExportar = currentFilter === 'all' 
